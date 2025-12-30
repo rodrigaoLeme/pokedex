@@ -1,4 +1,4 @@
-package com.xafun.pokedex.pokedex
+package com.xafun.pokedex
 
 import io.flutter.embedding.android.FlutterActivity
 
