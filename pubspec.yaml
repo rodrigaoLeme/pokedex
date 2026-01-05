@@ -47,14 +47,14 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
-  # Fontes (Poppins - você pode baixar do Google Fonts)
-  # fonts:
-  #   - family: Poppins
-  #     fonts:
-  #       - asset: assets/fonts/Poppins-Regular.ttf
-  #       - asset: assets/fonts/Poppins-Medium.ttf
-  #         weight: 500
-  #       - asset: assets/fonts/Poppins-SemiBold.ttf
-  #         weight: 600
-  #       - asset: assets/fonts/Poppins-Bold.ttf
-  #         weight: 700
+  fonts:
+    - family: Poppins
+      fonts:
+        - asset: lib/ui/assets/fonts/Poppins/Poppins-regular.ttf
+          weight: 400
+        - asset: lib/ui/assets/fonts/Poppins/Poppins-medium.ttf
+          weight: 500
+        - asset: lib/ui/assets/fonts/Poppins/Poppins-semibold.ttf
+          weight: 600
+        - asset: lib/ui/assets/fonts/Poppins/Poppins-bold.ttf
+          weight: 700
