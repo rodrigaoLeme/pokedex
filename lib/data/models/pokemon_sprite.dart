@@ -24,7 +24,7 @@ class PokemonSprite {
       backDefault: json['back_default'] as String?,
       backShiny: json['back_shiny'] as String?,
       other: json['other'] != null
-          ? PokemonOtherSprites.fromJson(['other'] as Map<String, dynamic>)
+          ? PokemonOtherSprites.fromJson(json['other'] as Map<String, dynamic>)
           : null,
     );
   }
