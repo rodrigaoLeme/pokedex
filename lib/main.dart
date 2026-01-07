@@ -1,20 +1,27 @@
 import 'package:flutter/material.dart';
-import 'package:pokedex/data/models/pokemon_ability.dart';
+import 'package:pokedex/data/models/models.dart';
+import 'package:pokedex/core/network/dio_config.dart';
+import 'package:pokedex/data/datasources/pokemon_remote_datasource.dart';
+import 'package:pokedex/data/repositories/pokemon_repository.dart';
 
-void main() {
+void main() async {
   runApp(const MyApp());
-  final json = {
-    'is_hidden': false,
-    'slot': 1,
-    'ability': {
-      'name': 'static',
-      'url': 'https://pokeapi.co/api/v2/ability/9/',
-    },
-  };
+  final dio = DioConfig.createDio();
+  final dataSource = PokemonRemoteDataSource(dio: dio);
+  final repository = PokemonRepository(remoteDatasource: dataSource);
 
-  final ability = PokemonAbility.fromJson(json);
-  print(ability.displayName); // "Static"
-  print(ability.label);
+  try {
+    print('🔍 Buscando Pikachu...\n');
+    final pikachu = await repository.getPokemonDetail(25);
+
+    print('✅ Sucesso!');
+    print('Nome: ${pikachu.displayName}');
+    print('ID: ${pikachu.formattedId}');
+    print('Tipo: ${pikachu.primaryType.displayName}');
+    print('HP: ${pikachu.stats.hp?.baseStat}');
+  } catch (e) {
+    print('❌ Erro: $e');
+  }
 }
 
 class MyApp extends StatelessWidget {
