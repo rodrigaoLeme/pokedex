@@ -1,7 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:pokedex/data/models/pokemon_ability.dart';
 
 void main() {
   runApp(const MyApp());
+  final json = {
+    'is_hidden': false,
+    'slot': 1,
+    'ability': {
+      'name': 'static',
+      'url': 'https://pokeapi.co/api/v2/ability/9/',
+    },
+  };
+
+  final ability = PokemonAbility.fromJson(json);
+  print(ability.displayName); // "Static"
+  print(ability.label);
 }
 
 class MyApp extends StatelessWidget {
@@ -95,9 +108,7 @@ class _MyHomePageState extends State<MyHomePage> {
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
           children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
+            const Text('You have pushed the button this many times:'),
             Text(
               '$_counter',
               style: Theme.of(context).textTheme.headlineMedium,
