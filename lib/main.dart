@@ -1,11 +1,20 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:pokedex/data/models/models.dart';
 import 'package:pokedex/core/network/dio_config.dart';
 import 'package:pokedex/data/datasources/pokemon_remote_datasource.dart';
 import 'package:pokedex/data/repositories/pokemon_repository.dart';
+import 'package:pokedex/logic/providers/pokemon_detail_provider.dart';
+import 'package:pokedex/logic/providers/pokemon_list_notifier.dart';
+import 'package:pokedex/logic/providers/pokemon_list_provider.dart';
+import 'package:pokedex/logic/providers/providers.dart';
 
 void main() async {
   runApp(const MyApp());
+  testProvider();
+}
+
+Future<void> testDio() async {
   final dio = DioConfig.createDio();
   final dataSource = PokemonRemoteDataSource(dio: dio);
   final repository = PokemonRepository(remoteDatasource: dataSource);
@@ -21,6 +30,185 @@ void main() async {
     print('HP: ${pikachu.stats.hp?.baseStat}');
   } catch (e) {
     print('❌ Erro: $e');
+  }
+}
+
+Future<void> testProvider() async {
+  print('🧪 TESTANDO PROVIDERS COM RIVERPOD\n');
+
+  final container = ProviderContainer();
+
+  try {
+    // ========================================
+    // TESTE 1: Provider de Dependências
+    // ========================================
+    print('📦 Teste 1: Providers de Dependência');
+    print('─────────────────────────────────────');
+
+    final dio = container.read(dioProvider);
+    print('✅ Dio configurado: ${dio.options.baseUrl}');
+
+    final dataSource = container.read(pokemonRemoteDataSourceProvider);
+    print('✅ DataSource criado: ${dataSource.runtimeType}');
+
+    final repository = container.read(pokemonRepositoryProvider);
+    print('✅ Repository criado: ${repository.runtimeType}\n');
+
+    // ========================================
+    // TESTE 2: Lista de Pokémons
+    // ========================================
+    print('📋 Teste 2: Lista de Pokémons (página 0)');
+    print('─────────────────────────────────────');
+
+    // Aguarda o provider carregar
+    final listAsync = await container.read(pokemonListProvider(0).future);
+
+    print('✅ Total de pokémons: ${listAsync.count}');
+    print('✅ Resultados nesta página: ${listAsync.results.length}');
+    print('✅ Tem próxima página? ${listAsync.hasNext}');
+    print('✅ Primeiros 3 pokémons:');
+    for (var i = 0; i < 3 && i < listAsync.results.length; i++) {
+      final info = listAsync.results[i];
+      print('   ${info.formattedId} - ${info.displayName}');
+    }
+    print('');
+
+    // ========================================
+    // TESTE 3: Detalhes do Pikachu
+    // ========================================
+    print('🔍 Teste 3: Detalhes do Pikachu (#25)');
+    print('─────────────────────────────────────');
+
+    final pikachu = await container.read(pokemonDetailProvider(25).future);
+
+    print('✅ Nome: ${pikachu.displayName}');
+    print('✅ ID: ${pikachu.formattedId}');
+    print('✅ Tipo primário: ${pikachu.primaryType.displayName}');
+    print(
+      '✅ Tipo secundário: ${pikachu.secondaryType?.displayName ?? 'Nenhum'}',
+    );
+    print('✅ Altura: ${pikachu.heightInMeters}m');
+    print('✅ Peso: ${pikachu.weightInKilograms}kg');
+    print('✅ HP: ${pikachu.stats.hp?.baseStat}');
+    print('✅ Attack: ${pikachu.stats.attack?.baseStat}');
+    print('✅ Defense: ${pikachu.stats.defense?.baseStat}');
+    print('✅ Total Stats: ${pikachu.stats.total}');
+    print('✅ Habilidades: ${pikachu.abilities.length}');
+    for (var ability in pikachu.abilities) {
+      print(
+        '   - ${ability.displayName} ${ability.isHidden ? '(Oculta)' : ''}',
+      );
+    }
+    print('');
+
+    // ========================================
+    // TESTE 4: Busca por "pika"
+    // ========================================
+    print('🔎 Teste 4: Busca por "pika"');
+    print('─────────────────────────────────────');
+
+    final searchResults = await container.read(
+      pokemonSearchProvider('pika').future,
+    );
+
+    print('✅ Resultados encontrados: ${searchResults.length}');
+    for (var pokemon in searchResults) {
+      print('   ${pokemon.formattedId} - ${pokemon.displayName}');
+    }
+    print('');
+
+    // ========================================
+    // TESTE 5: Batch (múltiplos pokémons)
+    // ========================================
+    print('📦 Teste 5: Buscar múltiplos pokémons [1, 4, 7]');
+    print('─────────────────────────────────────');
+
+    final batchPokemons = await container.read(
+      pokemonBatchProvider([1, 4, 7]).future,
+    );
+
+    print('✅ Pokémons carregados: ${batchPokemons.length}');
+    for (var pokemon in batchPokemons) {
+      print(
+        '   ${pokemon.formattedId} - ${pokemon.displayName} (${pokemon.primaryType.displayName})',
+      );
+    }
+    print('');
+
+    // ========================================
+    // TESTE 6: StateNotifier - Paginação
+    // ========================================
+    print('📄 Teste 6: StateNotifier com Paginação');
+    print('─────────────────────────────────────');
+
+    // Aguarda carregar primeira página (carrega automaticamente)
+    await Future.delayed(Duration(seconds: 3));
+
+    var state = container.read(pokemonListNotifierProvider);
+
+    print('✅ Página inicial:');
+    print('   Pokémons: ${state.pokemons.length}');
+    print('   Página atual: ${state.currentPage}');
+    print('   Tem mais? ${state.hasMore}');
+    print('   Carregando? ${state.isLoading}');
+
+    if (state.pokemons.isNotEmpty) {
+      print('   Primeiros 3:');
+      for (var i = 0; i < 3 && i < state.pokemons.length; i++) {
+        print(
+          '      ${state.pokemons[i].formattedId} - ${state.pokemons[i].displayName}',
+        );
+      }
+    }
+
+    // Carregar mais
+    print('\n🔄 Carregando página 2...');
+    final notifier = container.read(pokemonListNotifierProvider.notifier);
+    await notifier.loadMore();
+    await Future.delayed(Duration(seconds: 2));
+
+    state = container.read(pokemonListNotifierProvider);
+    print('✅ Após loadMore:');
+    print('   Pokémons: ${state.pokemons.length}');
+    print('   Página atual: ${state.currentPage}');
+
+    // Refresh
+    print('\n🔄 Fazendo refresh...');
+    await notifier.refresh();
+    await Future.delayed(Duration(seconds: 2));
+
+    state = container.read(pokemonListNotifierProvider);
+    print('✅ Após refresh:');
+    print('   Pokémons: ${state.pokemons.length}');
+    print('   Página atual: ${state.currentPage}');
+
+    print('');
+
+    // ========================================
+    // RESUMO FINAL
+    // ========================================
+    print('═════════════════════════════════════');
+    print('✅ TODOS OS TESTES PASSARAM!');
+    print('═════════════════════════════════════');
+    print('');
+    print('Providers testados:');
+    print('  ✅ dioProvider');
+    print('  ✅ pokemonRemoteDataSourceProvider');
+    print('  ✅ pokemonRepositoryProvider');
+    print('  ✅ pokemonListProvider');
+    print('  ✅ pokemonDetailProvider');
+    print('  ✅ pokemonSearchProvider');
+    print('  ✅ pokemonBatchProvider');
+    print('  ✅ pokemonListNotifierProvider');
+    print('');
+    print('🚀 Pronto para criar a UI!');
+  } catch (e, stack) {
+    print('❌ ERRO NO TESTE:');
+    print(e);
+    print('\n📍 Stack trace:');
+    print(stack);
+  } finally {
+    container.dispose();
   }
 }
 
